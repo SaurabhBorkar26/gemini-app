@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Calculator, Brain, Globe, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronRight, Award, Clock, Home, Upload, FileText, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { extractTextFromPDF, parseQuestionsFromText } from '../utils/pdfParser';
+import { extractTextFromPDF, parseQuestionsFromText, parseQuestionsWithGemini } from '../utils/pdfParser';
 
 // --- FULL EXTRACTED QUESTION BANK ---
 // Sourced from uploaded SSC CGL Tier 1 Papers (Sept 9, 10, 11, 12 - 2024)

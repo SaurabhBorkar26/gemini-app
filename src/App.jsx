@@ -10,12 +10,12 @@ const questionBank = {
   english: [
     {
       id: 'e1',
-      source: 'JSO24_PreScreen_P',
-      instruction: 'Read the following passage and answer the questions below:',
-      passage: "A list of articles lost by railway travellers and now on sale at a great London station has been published, and many people who read it have been astonished at the absent-mindedness of their fellows. If statistical records were available on the subject, however, I doubt whether it would be found that absent mindedness is common. It is the efficiency rather than inefficiency of human memory that compels my wonder. Modern man remembers even telephone numbers. He remembers the address of his friends. He remembers that dates of good vintages. He remembers appointments for lunch and dinner.",
-      question: 'The phrase "good vintages" means:',
-      options: ['advantages', 'spurious liquor', 'wines made in a particular year', 'old fruit-bearing vines'],
-      correct: 2
+      source: 'JSO22_PreScreen2',
+      instruction: 'Read the Following Passage and answer the questions below:',
+      passage: "Volcanoes are often associated with earthquakes that occur in the same vicinity. But earthquakes can occur in regions where there are no volcanic eruptions, such as Assam, where in 1897 a major earthquake devastated an area of 150,000 thousand square miles. To the devastation caused by the upheaval itself was added that produced by the floods and storms which followed. Earthquakes of this kind are caused by the movements of \"strata\" or beds of rock at a weak place or 'fault' in the crust of the earth.",
+      question: 'In the passage the phrase "that produced by the floods" implies:',
+      options: ['upheaval', 'devastation', 'volcanic eruption', 'earthquake'],
+      correct: 1
     },
     {
       id: 'e2',

@@ -33,8 +33,10 @@ const Game = () => {
       if (savedProgress) {
         const parsed = JSON.parse(savedProgress);
         setAnswers(parsed.answers || {});
-        // Convert array back to Set
         setVisited(new Set(parsed.visited || [0]));
+        setActiveSection(parsed.activeSection || null);
+        setCurrentQuestionIndex(parsed.currentQuestionIndex || 0);
+        setIsFinished(parsed.isFinished || false);
       }
     }
   }, [user]);
@@ -44,18 +46,22 @@ const Game = () => {
     if (user) {
       localStorage.setItem(`progress_${user.id}`, JSON.stringify({
         answers,
-        visited: Array.from(visited)
+        visited: Array.from(visited),
+        activeSection,
+        currentQuestionIndex,
+        isFinished
       }));
     }
-  }, [answers, visited, user]);
+  }, [answers, visited, activeSection, currentQuestionIndex, isFinished, user]);
 
   const startTest = (section) => {
+    // If we are already in this section and not finished, don't reset
+    if (activeSection === section && !isFinished) {
+      return;
+    }
+
     setActiveSection(section);
     setCurrentQuestionIndex(0);
-    // We don't reset answers here to allow continuing? 
-    // Or maybe we should? For now let's keep it simple and reset for a new test run
-    // IF the user wants to "Start Test". 
-    // Actually, let's reset for a fresh start if they click the card.
     setAnswers({});
     setIsFinished(false);
     setVisited(new Set([0]));

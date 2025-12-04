@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import { GoogleGenerativeAI } from "@google-generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Set worker source
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;

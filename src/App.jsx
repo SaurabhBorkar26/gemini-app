@@ -1,19 +1,61 @@
-import React, { useState } from 'react';
-import { CheckCircle, XCircle, BarChart2, BookOpen, Calculator, Brain, ChevronRight, ChevronLeft, RotateCcw, Home } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, XCircle, BarChart2, BookOpen, Calculator, Brain, ChevronRight, ChevronLeft, RotateCcw, Home as HomeIcon, LogOut } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { questionBank } from './data/questions';
 import SectionCard from './components/SectionCard';
 import Timer from './components/Timer';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './components/Login';
+import Signup from './components/Signup';
 
-export default function App() {
+// Protected Route Wrapper
+const RequireAuth = ({ children }) => {
+  const { user } = useAuth();
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// Main Game Component (The original App logic, now user-aware)
+const Game = () => {
+  const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isFinished, setIsFinished] = useState(false);
   const [visited, setVisited] = useState(new Set([0]));
 
+  // Load progress on mount
+  useEffect(() => {
+    if (user) {
+      const savedProgress = localStorage.getItem(`progress_${user.id}`);
+      if (savedProgress) {
+        const parsed = JSON.parse(savedProgress);
+        setAnswers(parsed.answers || {});
+        // Convert array back to Set
+        setVisited(new Set(parsed.visited || [0]));
+      }
+    }
+  }, [user]);
+
+  // Save progress on change
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`progress_${user.id}`, JSON.stringify({
+        answers,
+        visited: Array.from(visited)
+      }));
+    }
+  }, [answers, visited, user]);
+
   const startTest = (section) => {
     setActiveSection(section);
     setCurrentQuestionIndex(0);
+    // We don't reset answers here to allow continuing? 
+    // Or maybe we should? For now let's keep it simple and reset for a new test run
+    // IF the user wants to "Start Test". 
+    // Actually, let's reset for a fresh start if they click the card.
     setAnswers({});
     setIsFinished(false);
     setVisited(new Set([0]));
@@ -51,9 +93,17 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-50 font-sans">
         <header className="bg-indigo-600 text-white p-6 shadow-md">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold">JSO Exam Prep Series</h1>
-            <p className="opacity-90 mt-2 text-indigo-100">Practice authentic questions from previous papers</p>
+          <div className="max-w-5xl mx-auto flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">JSO Exam Prep Series</h1>
+              <p className="opacity-90 mt-2 text-indigo-100">Welcome, {user.username}!</p>
+            </div>
+            <button
+              onClick={logout}
+              className="flex items-center px-4 py-2 bg-indigo-700 rounded-lg hover:bg-indigo-800 transition-colors text-sm font-medium"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> Logout
+            </button>
           </div>
         </header>
 
@@ -190,7 +240,7 @@ export default function App() {
                 onClick={() => setActiveSection(null)}
                 className="flex items-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                <Home className="w-4 h-4 mr-2" /> Home
+                <HomeIcon className="w-4 h-4 mr-2" /> Home
               </button>
             </div>
           </div>
@@ -329,5 +379,23 @@ export default function App() {
         </div>
       </main>
     </div>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/" element={
+            <RequireAuth>
+              <Game />
+            </RequireAuth>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

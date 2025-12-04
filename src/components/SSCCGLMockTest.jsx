@@ -564,8 +564,8 @@ export default function SSCCGLMockTest() {
                             key={section}
                             onClick={() => setActiveSection(section)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${activeSection === section
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                                 }`}
                         >
                             {getIcon(section)}
@@ -633,8 +633,8 @@ export default function SSCCGLMockTest() {
                                                 >
                                                     <span className="flex items-center gap-3">
                                                         <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs border ${isSubmitted
-                                                                ? (option === q.correctAnswer ? 'border-green-600 bg-green-200 text-green-800' : 'border-gray-300')
-                                                                : (userAnswers[q.id] === option ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 text-gray-500 group-hover:border-blue-300')
+                                                            ? (option === q.correctAnswer ? 'border-green-600 bg-green-200 text-green-800' : 'border-gray-300')
+                                                            : (userAnswers[q.id] === option ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 text-gray-500 group-hover:border-blue-300')
                                                             }`}>
                                                             {String.fromCharCode(65 + optIdx)}
                                                         </span>
@@ -688,4 +688,3 @@ export default function SSCCGLMockTest() {
         </div>
     );
 }
-```

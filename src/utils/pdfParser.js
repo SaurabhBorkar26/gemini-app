@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import { GoogleGenerativeAI } from "@google-generative-ai";
 
 // Set worker source
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -16,6 +17,44 @@ export const extractTextFromPDF = async (file) => {
     }
 
     return fullText;
+};
+
+export const parseQuestionsWithGemini = async (text, apiKey) => {
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `
+      You are an expert exam parser. Your task is to extract multiple-choice questions from the provided text of an SSC CGL exam paper.
+      
+      The text contains questions from sections like 'General Intelligence and Reasoning', 'General Awareness', 'Quantitative Aptitude', and 'English Comprehension'.
+      
+      Please extract the questions and return a JSON array. Each object in the array should have the following fields:
+      - id: A unique string id (e.g., "q1", "q2").
+      - section: One of "Reasoning", "General Awareness", "Aptitude", "English". Infer the section based on the content if explicit headers are missing.
+      - question: The text of the question.
+      - options: An array of strings representing the options.
+      - correctAnswer: The correct answer string if available in the text (e.g., marked or in an answer key). If not found, set to null.
+      - rationale: A brief explanation or "Extracted from PDF" if not available.
+
+      IMPORTANT: Return ONLY the raw JSON array. Do not include markdown formatting like \`\`\`json.
+      
+      Text to parse:
+      ${text.substring(0, 30000)} // Limit text length to avoid token limits if necessary, though 1.5 flash has a large context window.
+    `;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const textResponse = response.text();
+
+        // Clean up potential markdown formatting
+        const jsonString = textResponse.replace(/^```json/i, '').replace(/```$/, '').trim();
+
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.error("Gemini Parsing Error:", error);
+        throw new Error("Failed to parse with Gemini AI. Please check your API Key or try again.");
+    }
 };
 
 export const parseQuestionsFromText = (text) => {

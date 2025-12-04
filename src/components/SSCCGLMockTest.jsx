@@ -299,11 +299,18 @@ const initialQuestionsData = [
 export default function SSCCGLMockTest() {
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('Reasoning');
+    const [questions, setQuestions] = useState(initialQuestionsData);
     const [userAnswers, setUserAnswers] = useState({});
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [score, setScore] = useState(0);
     const [showConfetti, setShowConfetti] = useState(false);
     const [timer, setTimer] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState(null);
+
+    // Gemini API Key State
+    const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+    const [showSettings, setShowSettings] = useState(false);
 
     useEffect(() => {
         let interval;
@@ -343,7 +350,7 @@ export default function SSCCGLMockTest() {
 
     const handleSubmit = () => {
         let newScore = 0;
-        questionsData.forEach(q => {
+        questions.forEach(q => {
             if (userAnswers[q.id] === q.correctAnswer) {
                 newScore += 2;
             } else if (userAnswers[q.id]) {
@@ -362,33 +369,113 @@ export default function SSCCGLMockTest() {
         setTimer(0);
         setActiveSection('Reasoning');
         setShowConfetti(false);
+        setUploadError(null);
     };
 
-    const currentQuestions = questionsData.filter(q => q.section === activeSection);
-    const totalQuestions = questionsData.length;
+    const handleSaveApiKey = (key) => {
+        setApiKey(key);
+        localStorage.setItem('gemini_api_key', key);
+    };
+
+    const handleFileUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            setUploadError('Please upload a valid PDF file.');
+            return;
+        }
+
+        setIsUploading(true);
+        setUploadError(null);
+
+        try {
+            const text = await extractTextFromPDF(file);
+            let parsedQuestions = [];
+
+            if (apiKey) {
+                // Use Gemini AI if API key is present
+                try {
+                    parsedQuestions = await parseQuestionsWithGemini(text, apiKey);
+                } catch (geminiError) {
+                    console.warn("Gemini parsing failed, falling back to heuristic:", geminiError);
+                    setUploadError("Gemini AI parsing failed. Falling back to basic parser.");
+                    parsedQuestions = parseQuestionsFromText(text);
+                }
+            } else {
+                // Fallback to heuristic parser
+                parsedQuestions = parseQuestionsFromText(text);
+            }
+
+            if (parsedQuestions.length === 0) {
+                setUploadError('No questions could be extracted. Please check the PDF format.');
+            } else {
+                setQuestions(parsedQuestions);
+                handleReset(); // Reset the test with new questions
+                alert(`Successfully loaded ${parsedQuestions.length} questions${apiKey ? ' using Gemini AI' : ''}!`);
+            }
+        } catch (error) {
+            console.error('PDF parsing error:', error);
+            setUploadError('Failed to parse PDF. Please try another file.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const currentQuestions = questions.filter(q => q.section === activeSection);
+    const totalQuestions = questions.length;
     const answeredCount = Object.keys(userAnswers).length;
-    const progressPercentage = (answeredCount / totalQuestions) * 100;
+    const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
 
             {/* Header */}
             <header className="bg-blue-700 text-white p-4 shadow-lg sticky top-0 z-10">
-                <div className="max-w-6xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-4">
+                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
                         <button onClick={() => navigate('/')} className="p-2 hover:bg-blue-600 rounded-full transition-colors" title="Back to Dashboard">
                             <Home className="w-6 h-6 text-white" />
                         </button>
                         <div>
                             <h1 className="text-xl font-bold flex items-center gap-2">
                                 <Award className="w-6 h-6 text-yellow-300" />
-                                SSC CGL 2024 Mock
+                                SSC CGL Mock
                             </h1>
-                            <p className="text-xs text-blue-200 mt-1 hidden sm:block">Aggregated Previous Year Questions (Sept Shifts)</p>
+                            <p className="text-xs text-blue-200 mt-1 hidden sm:block">Upload your paper or practice default questions</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+
+                        {/* Settings Button */}
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className={`p-2 rounded-full transition-colors ${apiKey ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600 hover:bg-gray-500'}`}
+                            title={apiKey ? "Gemini AI Enabled" : "Configure Gemini AI"}
+                        >
+                            <Settings className="w-5 h-5 text-white" />
+                        </button>
+
+                        {/* Upload Button */}
+                        <div className="relative">
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                id="pdf-upload"
+                                disabled={isUploading}
+                            />
+                            <label
+                                htmlFor="pdf-upload"
+                                className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg cursor-pointer text-sm font-medium transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isUploading ? <Loader className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                {isUploading ? 'Parsing...' : 'Upload PDF'}
+                            </label>
+                        </div>
+
                         <div className="flex items-center gap-2 bg-blue-800 px-3 py-1 rounded-full text-sm font-mono">
                             <Clock className="w-4 h-4 text-blue-300" />
                             {formatTime(timer)}
@@ -413,9 +500,40 @@ export default function SSCCGLMockTest() {
                         )}
                     </div>
                 </div>
+
+                {/* Settings Panel */}
+                {showSettings && (
+                    <div className="max-w-6xl mx-auto mt-4 p-4 bg-blue-800 rounded-lg animate-fade-in">
+                        <div className="flex items-center gap-4">
+                            <Key className="w-5 h-5 text-yellow-300" />
+                            <div className="flex-1">
+                                <label className="block text-xs text-blue-200 mb-1">Gemini API Key (for smarter parsing)</label>
+                                <input
+                                    type="password"
+                                    value={apiKey}
+                                    onChange={(e) => handleSaveApiKey(e.target.value)}
+                                    placeholder="Enter your Google Gemini API Key"
+                                    className="w-full px-3 py-2 bg-blue-900 border border-blue-600 rounded text-white text-sm focus:outline-none focus:border-yellow-300"
+                                />
+                            </div>
+                            <button onClick={() => setShowSettings(false)} className="text-blue-200 hover:text-white text-sm">Close</button>
+                        </div>
+                        <p className="text-xs text-blue-300 mt-2">
+                            Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline hover:text-white">Google AI Studio</a>.
+                            The key is stored locally in your browser.
+                        </p>
+                    </div>
+                )}
             </header>
 
             <main className="max-w-6xl mx-auto p-4 md:p-6 pb-24">
+
+                {uploadError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5" />
+                        {uploadError}
+                    </div>
+                )}
 
                 {/* Result Banner */}
                 {isSubmitted && (
@@ -446,8 +564,8 @@ export default function SSCCGLMockTest() {
                             key={section}
                             onClick={() => setActiveSection(section)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${activeSection === section
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                                 }`}
                         >
                             {getIcon(section)}
@@ -457,94 +575,102 @@ export default function SSCCGLMockTest() {
                 </div>
 
                 {/* Questions Grid */}
-                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-                    {currentQuestions.map((q, index) => {
-                        const isCorrect = userAnswers[q.id] === q.correctAnswer;
+                {currentQuestions.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                        <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium text-gray-900">No questions in this section</h3>
+                        <p className="text-gray-500">Upload a PDF or switch sections to see questions.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+                        {currentQuestions.map((q, index) => {
+                            const isCorrect = userAnswers[q.id] === q.correctAnswer;
 
-                        return (
-                            <div key={q.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded">
-                                            Q{index + 1}
-                                        </span>
-                                        {isSubmitted && (
-                                            isCorrect
-                                                ? <span className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Correct (+2)</span>
-                                                : userAnswers[q.id]
-                                                    ? <span className="text-xs font-bold text-red-600 flex items-center gap-1"><XCircle className="w-3 h-3" /> Incorrect (-0.5)</span>
-                                                    : <span className="text-xs font-bold text-gray-400">Unattempted</span>
-                                        )}
+                            return (
+                                <div key={q.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded">
+                                                Q{index + 1}
+                                            </span>
+                                            {isSubmitted && (
+                                                isCorrect
+                                                    ? <span className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Correct (+2)</span>
+                                                    : userAnswers[q.id]
+                                                        ? <span className="text-xs font-bold text-red-600 flex items-center gap-1"><XCircle className="w-3 h-3" /> Incorrect (-0.5)</span>
+                                                        : <span className="text-xs font-bold text-gray-400">Unattempted</span>
+                                            )}
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900 leading-relaxed">{q.question}</h3>
                                     </div>
-                                    <h3 className="text-lg font-medium text-gray-900 leading-relaxed">{q.question}</h3>
-                                </div>
 
-                                <div className="p-5 space-y-3">
-                                    {q.options.map((option, optIdx) => {
-                                        let optionClass = "w-full text-left p-3 rounded-lg border-2 transition-all flex justify-between items-center group ";
+                                    <div className="p-5 space-y-3">
+                                        {q.options.map((option, optIdx) => {
+                                            let optionClass = "w-full text-left p-3 rounded-lg border-2 transition-all flex justify-between items-center group ";
 
-                                        if (isSubmitted) {
-                                            if (option === q.correctAnswer) {
-                                                optionClass += "border-green-500 bg-green-50 text-green-800";
-                                            } else if (userAnswers[q.id] === option) {
-                                                optionClass += "border-red-500 bg-red-50 text-red-800";
+                                            if (isSubmitted) {
+                                                if (option === q.correctAnswer) {
+                                                    optionClass += "border-green-500 bg-green-50 text-green-800";
+                                                } else if (userAnswers[q.id] === option) {
+                                                    optionClass += "border-red-500 bg-red-50 text-red-800";
+                                                } else {
+                                                    optionClass += "border-gray-100 text-gray-400 opacity-60";
+                                                }
                                             } else {
-                                                optionClass += "border-gray-100 text-gray-400 opacity-60";
+                                                if (userAnswers[q.id] === option) {
+                                                    optionClass += "border-blue-500 bg-blue-50 text-blue-700 font-medium";
+                                                } else {
+                                                    optionClass += "border-gray-100 hover:border-blue-200 hover:bg-gray-50 text-gray-600";
+                                                }
                                             }
-                                        } else {
-                                            if (userAnswers[q.id] === option) {
-                                                optionClass += "border-blue-500 bg-blue-50 text-blue-700 font-medium";
-                                            } else {
-                                                optionClass += "border-gray-100 hover:border-blue-200 hover:bg-gray-50 text-gray-600";
-                                            }
-                                        }
 
-                                        return (
-                                            <button
-                                                key={optIdx}
-                                                onClick={() => handleOptionClick(q.id, option)}
-                                                disabled={isSubmitted}
-                                                className={optionClass}
-                                            >
-                                                <span className="flex items-center gap-3">
-                                                    <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs border ${isSubmitted
-                                                        ? (option === q.correctAnswer ? 'border-green-600 bg-green-200 text-green-800' : 'border-gray-300')
-                                                        : (userAnswers[q.id] === option ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 text-gray-500 group-hover:border-blue-300')
-                                                        }`}>
-                                                        {String.fromCharCode(65 + optIdx)}
+                                            return (
+                                                <button
+                                                    key={optIdx}
+                                                    onClick={() => handleOptionClick(q.id, option)}
+                                                    disabled={isSubmitted}
+                                                    className={optionClass}
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs border ${isSubmitted
+                                                                ? (option === q.correctAnswer ? 'border-green-600 bg-green-200 text-green-800' : 'border-gray-300')
+                                                                : (userAnswers[q.id] === option ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 text-gray-500 group-hover:border-blue-300')
+                                                            }`}>
+                                                            {String.fromCharCode(65 + optIdx)}
+                                                        </span>
+                                                        {option}
                                                     </span>
-                                                    {option}
-                                                </span>
-                                                {isSubmitted && option === q.correctAnswer && <CheckCircle className="w-5 h-5 text-green-600" />}
-                                                {isSubmitted && userAnswers[q.id] === option && option !== q.correctAnswer && <XCircle className="w-5 h-5 text-red-600" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                                    {isSubmitted && option === q.correctAnswer && <CheckCircle className="w-5 h-5 text-green-600" />}
+                                                    {isSubmitted && userAnswers[q.id] === option && option !== q.correctAnswer && <XCircle className="w-5 h-5 text-red-600" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
 
-                                {/* Rationale Section */}
-                                {isSubmitted && (
-                                    <div className="px-5 pb-5 pt-0 animate-fade-in">
-                                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                            <div className="flex items-start gap-2">
-                                                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                                <div>
-                                                    <p className="font-bold text-blue-800 text-sm mb-1">Explanation</p>
-                                                    <p className="text-blue-900 text-sm leading-relaxed">{q.rationale}</p>
+                                    {/* Rationale Section */}
+                                    {isSubmitted && (
+                                        <div className="px-5 pb-5 pt-0 animate-fade-in">
+                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                                    <div>
+                                                        <p className="font-bold text-blue-800 text-sm mb-1">Explanation</p>
+                                                        <p className="text-blue-900 text-sm leading-relaxed">{q.rationale || "No explanation available for this question."}</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
             </main>
 
             {/* Floating Submit Button */}
-            {!isSubmitted && (
+            {!isSubmitted && currentQuestions.length > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:static md:bg-transparent md:border-0 md:shadow-none md:p-0 md:mb-12 md:text-center z-20">
                     <div className="max-w-6xl mx-auto flex justify-between items-center md:justify-end">
                         <div className="text-sm text-gray-500 md:hidden">
@@ -562,3 +688,4 @@ export default function SSCCGLMockTest() {
         </div>
     );
 }
+```

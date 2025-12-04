@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, BarChart2, BookOpen, Calculator, Brain, ChevronRight, ChevronLeft, RotateCcw, Home as HomeIcon, LogOut, Briefcase } from 'lucide-react';
+import { CheckCircle, XCircle, BarChart2, BookOpen, Calculator, Brain, ChevronRight, ChevronLeft, RotateCcw, Home as HomeIcon, LogOut } from 'lucide-react';
 import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { questionBank } from './data/questions';
 import SectionCard from './components/SectionCard';
@@ -7,7 +7,6 @@ import Timer from './components/Timer';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import IBPSMockTest from './components/IBPSMockTest';
 
 // Protected Route Wrapper
 const RequireAuth = ({ children }) => {
@@ -137,13 +136,6 @@ const Game = () => {
               color="purple"
               questionCount={questionBank.reasoning.length}
               onClick={() => startTest('reasoning')}
-            />
-            <SectionCard
-              title="IBPS PO Exam"
-              icon={Briefcase}
-              color="orange"
-              questionCount="100+"
-              onClick={() => window.location.hash = '#/ibpo'}
             />
           </div>
 
@@ -404,11 +396,6 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/ibpo" element={
-            <RequireAuth>
-              <IBPSMockTest />
-            </RequireAuth>
-          } />
           <Route path="/" element={
             <RequireAuth>
               <Game />

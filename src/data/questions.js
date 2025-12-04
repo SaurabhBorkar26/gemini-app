@@ -419,42 +419,5 @@ export const questionBank = {
             options: ['Only I implicit', 'Only II implicit', 'Either I or II', 'Neither I nor II'],
             correct: 1
         }
-  ],
-  ibpo: [
-    {
-      id: 'ib1',
-      source: 'IBPO_Sample',
-      question: 'In a certain code language, "BANKING" is written as "OBLJLMH". How is "PROBLEM" written in that code?',
-      options: ['QSPCMFN', 'QSPCLFM', 'QSPCNFM', 'QSPCMFM'],
-      correct: 0
-    },
-    {
-      id: 'ib2',
-      source: 'IBPO_Sample',
-      question: 'A train 125 m long passes a man, running at 5 km/hr in the same direction in which the train is going, in 10 seconds. The speed of the train is:',
-      options: ['45 km/hr', '50 km/hr', '54 km/hr', '55 km/hr'],
-      correct: 1
-    },
-    {
-      id: 'ib3',
-      source: 'IBPO_Sample',
-      question: 'Which of the following is the synonym of "ABANDON"?',
-      options: ['Keep', 'Cherish', 'Forsake', 'Join'],
-      correct: 2
-    },
-    {
-      id: 'ib4',
-      source: 'IBPO_Sample',
-      question: 'Find the missing number in the series: 2, 5, 11, 23, 47, ?',
-      options: ['95', '90', '85', '92'],
-      correct: 0
-    },
-    {
-      id: 'ib5',
-      source: 'IBPO_Sample',
-      question: 'If A is the brother of B; B is the sister of C; and C is the father of D, how D is related to A?',
-      options: ['Brother', 'Sister', 'Nephew', 'Cannot be determined'],
-      correct: 3
-    }
-  ]
+    ]
 };

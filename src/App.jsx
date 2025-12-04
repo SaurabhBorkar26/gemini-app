@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, BarChart2, BookOpen, Calculator, Brain, ChevronRight, ChevronLeft, RotateCcw, Home as HomeIcon, LogOut } from 'lucide-react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { questionBank } from './data/questions';
 import SectionCard from './components/SectionCard';
 import Timer from './components/Timer';
@@ -212,10 +212,10 @@ const Game = () => {
                         <div
                           key={oIdx}
                           className={`text-sm p-2 rounded flex items-center ${oIdx === q.correct
-                              ? 'bg-green-200 text-green-800 font-semibold'
-                              : oIdx === userAns
-                                ? 'bg-red-200 text-red-800'
-                                : 'bg-white text-gray-600'
+                            ? 'bg-green-200 text-green-800 font-semibold'
+                            : oIdx === userAns
+                              ? 'bg-red-200 text-red-800'
+                              : 'bg-white text-gray-600'
                             }`}
                         >
                           {oIdx === q.correct && <CheckCircle className="w-4 h-4 mr-2" />}
@@ -301,13 +301,13 @@ const Game = () => {
                 key={idx}
                 onClick={() => handleAnswer(idx)}
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center group ${answers[currentQuestionIndex] === idx
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50'
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50'
                   }`}
               >
                 <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-4 ${answers[currentQuestionIndex] === idx
-                    ? 'bg-indigo-500 text-white'
-                    : 'bg-gray-200 text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-200 text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600'
                   }`}>
                   {String.fromCharCode(65 + idx)}
                 </span>
@@ -323,8 +323,8 @@ const Game = () => {
               disabled={currentQuestionIndex === 0}
               onClick={() => navigateQuestion(currentQuestionIndex - 1)}
               className={`flex items-center px-4 py-2 rounded-lg ${currentQuestionIndex === 0
-                  ? 'text-gray-300 cursor-not-allowed'
-                  : 'text-gray-600 hover:bg-gray-100'
+                ? 'text-gray-300 cursor-not-allowed'
+                : 'text-gray-600 hover:bg-gray-100'
                 }`}
             >
               <ChevronLeft className="w-5 h-5 mr-1" /> Previous
@@ -385,7 +385,7 @@ const Game = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -395,7 +395,7 @@ export default function App() {
             </RequireAuth>
           } />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 }
